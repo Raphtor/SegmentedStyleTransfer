@@ -11,11 +11,9 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision import transforms
 
-from style_net_net import StyleNet
+from style_net import StyleNet
 from vgg import Vgg16
-
 import image_utils
-
 
 dataset = '../data/train'
 img_dim = 256
@@ -43,8 +41,8 @@ def train(args):
 	vgg = Vgg16(requires_grad=False).cuda()
 
 	# prepare network to apply style
-	style_net = StyleNet().cuda()
-	optimizer = Adam(style_net.parameters(), learning_rate)
+	stylizer = StyleNet().cuda()
+	optimizer = Adam(stylizer.parameters(), learning_rate)
 	mse_loss = torch.nn.MSELoss()
 
 	# read style image and convert to tensor
@@ -66,7 +64,7 @@ def train(args):
 
 	# main training loop over epochs and batches
 	for e in range(epochs):
-		style_net.train()
+		stylizer.train()
 		agg_base_loss = 0.
 		agg_style_loss = 0.
 		count = 0
@@ -79,7 +77,7 @@ def train(args):
 			x = Variable(x).cuda()
 			
 			# stylized image
-			y = style_net(x)
+			y = stylizer(x)
 
 			# pre-process images according to ImageNet parameters
 			y = normalize_batch(y)
@@ -115,13 +113,13 @@ def train(args):
 				print(mesg)
 
 	# save model
-	style_net.eval()
-	style_net.cpu()
+	stylizer.eval()
+	stylizer.cpu()
 
 	save_model_filename = "epoch_" + str(epochs) + "_" + str(time.ctime()).replace(' ', '_') + "_" + str(
 		base_weight) + "_" + str(style_weight) + ".model"
 	save_model_path = os.path.join(args.save_model_dir, save_model_filename)
-	torch.save(style_net.state_dict(), save_model_path)
+	torch.save(stylizer.state_dict(), save_model_path)
 
 	print("\nDone, trained model saved at", save_model_path)
 
@@ -155,10 +153,10 @@ def normalize_batch(batch):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Binary-classification with BCE')
+    parser = argparse.ArgumentParser(description='Train a style transfer network')
 
     # require either load or save
-    parser.add_argument('--style-image', type=str, default="images/style-images/mosaic.jpg",
+    parser.add_argument('--style-image', type=str, required=True,
                                   help="path to style-image")
 
     parser.add_argument("--save-model-dir", type=str, required=True,
