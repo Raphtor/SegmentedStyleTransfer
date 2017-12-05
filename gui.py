@@ -10,9 +10,14 @@ import numpy as np
 import traceback
 
 from segment import build_mask
+import style_transfer.image_utils as image_utils
+from style_transfer.style_net import StyleNet
+from style_transfer.vgg import Vgg16
+from style_transfer.test import test
 
 
 base_filename = None
+model_filename = None
 base_img = None
 points = [] # TODO: figure out better way to do this
 
@@ -35,11 +40,19 @@ def stylize():
 	outfile = name + '_mask' + ext
 	cv2.imwrite(outfile, mask * (255//3))
 
+	outfile = name + '_stylized' + ext
+	#style_img = test(base_filename, model_filename, outfile)
+	style_img = cv2.imread('images/couch_undie.jpeg')
+	out = image_utils.stylize_segments(base_img, style_img, mask)
+
+	
+	cv2.imwrite(outfile, out)
 	print('Done Processing')
 	sys.exit()
 
 def main():
 	global base_filename
+	global model_filename
 	global base_img
 
 	#This creates the main root of an application
@@ -48,7 +61,10 @@ def main():
 	root.configure(background='grey')
 
 	root.withdraw()
+
+	image_formats= [("JPEG", "*.jpg"), ("PNG", "*.png")]
 	base_filename = filedialog.askopenfilename()
+	model_filename = filedialog.askopenfilename(filetypes=(("Model files", "*.model")))
 	root.deiconify()
 
 	if not base_filename:
