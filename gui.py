@@ -19,21 +19,20 @@ from style_transfer.test import test
 base_filename = None
 model_filename = None
 base_img = None
-points = [] # TODO: figure out better way to do this
 
-
+panel = None
 
 def click(event):
+	global base_img
+
 	# need to swap for row, col
 	x, y = event.x, event.y
-	points.append((y, x))
-
-def stylize():
+	#points.append((y, x))
 
 	# TODO: bug where last button click gets added as well
-	points.pop()
+	#points.pop()
 
-
+	points = [(y, x)]
 	mask = build_mask(base_img, points)
 	
 	name, ext = os.path.splitext(base_filename)
@@ -43,28 +42,39 @@ def stylize():
 	outfile = name + '_stylized' + ext
 	#style_img = test(base_filename, model_filename, outfile)
 	style_img = cv2.imread('images/couch_undie.jpeg')
-	out = image_utils.stylize_segments(base_img, style_img, mask)
+	img = image_utils.stylize_segments(base_img, style_img, mask)
 
 	
-	cv2.imwrite(outfile, out)
-	print('Done Processing')
-	sys.exit()
+	cv2.imwrite(outfile, img)
+
+	#Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
+	img = ImageTk.PhotoImage(Image.open(outfile))
+
+	panel.configure(image=img)
+	panel.image = img
+
+	base_img = cv2.imread(outfile)
+
+
+	#print('Done Processing')
+	#sys.exit()
 
 def main():
 	global base_filename
 	global model_filename
 	global base_img
+	global panel
+
+	root = tk.Tk()
 
 	#This creates the main root of an application
-	root = tk.Tk()
 	root.title("Segmented Style Transfer")
 	root.configure(background='grey')
 
 	root.withdraw()
 
-	image_formats= [("JPEG", "*.jpg"), ("PNG", "*.png")]
 	base_filename = filedialog.askopenfilename()
-	model_filename = filedialog.askopenfilename(filetypes=(("Model files", "*.model")))
+	#model_filename = filedialog.askopenfilename()
 	root.deiconify()
 
 	if not base_filename:
@@ -88,8 +98,8 @@ def main():
 	#The Pack geometry manager packs widgets in rows or columns.
 	panel.pack(side = "bottom", fill = "both", expand = "yes")
 
-	button = Button(root, text="Stylize", command=stylize)
-	button.pack(side = "bottom")
+	#button = Button(root, text="Stylize", command=stylize)
+	#button.pack(side = "bottom")
 	
 	root.bind("<Button>", click)
 	root.mainloop()
