@@ -1,7 +1,7 @@
-import tkinter as tk
-from tkinter import Button
+import Tkinter as tk
+from Tkinter import Button
+from tkFileDialog import *
 import os
-from tkinter import filedialog
 from PIL import Image, ImageTk
 import sys
 import cv2
@@ -9,7 +9,7 @@ import numpy as np
 
 import traceback
 
-from segment import build_mask
+from segment import build_mask,segment_whole_image
 import style_transfer.image_utils as image_utils
 from style_transfer.style_net import StyleNet
 from style_transfer.vgg import Vgg16
@@ -21,10 +21,10 @@ model_filename = None
 base_img = None
 
 panel = None
-
+seg_img = None
 def click(event):
 	global base_img
-
+	global seg_img
 	# need to swap for row, col
 	x, y = event.x, event.y
 	#points.append((y, x))
@@ -32,8 +32,9 @@ def click(event):
 	# TODO: bug where last button click gets added as well
 	#points.pop()
 
-	points = [(y, x)]
-	mask = build_mask(base_img, points)
+	points = (y, x)
+
+	mask = build_mask(seg_img, points)
 	
 	name, ext = os.path.splitext(base_filename)
 	outfile = name + '_mask' + ext
@@ -41,7 +42,7 @@ def click(event):
 
 	outfile = name + '_stylized' + ext
 	#style_img = test(base_filename, model_filename, outfile)
-	style_img = cv2.imread('images/couch_undie.jpeg')
+	style_img = cv2.imread('lounge_style.jpg')
 	img = image_utils.stylize_segments(base_img, style_img, mask)
 
 	
@@ -64,7 +65,7 @@ def main():
 	global model_filename
 	global base_img
 	global panel
-
+	global seg_img
 	root = tk.Tk()
 
 	#This creates the main root of an application
@@ -73,7 +74,7 @@ def main():
 
 	root.withdraw()
 
-	base_filename = filedialog.askopenfilename()
+	base_filename = askopenfilename()
 	#model_filename = filedialog.askopenfilename()
 	root.deiconify()
 
@@ -88,7 +89,7 @@ def main():
 		print('ERROR: ' + base_filename +' is invalid input image!')
 		sys.exit(-1)
 
-
+	seg_img = segment_whole_image(base_img)
 	#Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
 	img = ImageTk.PhotoImage(Image.open(base_filename))
 
